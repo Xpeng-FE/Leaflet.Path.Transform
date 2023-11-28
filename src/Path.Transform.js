@@ -34,6 +34,7 @@ L.PathTransform.Handle.CursorsByType = [
 L.PathTransform.RotateHandle = L.PathTransform.Handle.extend({
   options: {
     className: 'leaflet-path-transform-handler transform-handler--rotate',
+    pane:'transformCirclePane'
   },
 
   onAdd: function (map) {
@@ -48,6 +49,7 @@ L.PathTransform.RotateHandle = L.PathTransform.Handle.extend({
 L.Handler.PathTransform = L.Handler.extend({
   options: {
     rotation: true,
+    rotationAnchor: null,
     scaling: true,
     uniformScaling: true,
     maxZoom: 22,
@@ -360,12 +362,14 @@ L.Handler.PathTransform = L.Handler.extend({
     this._path._transform(null);
     this._rect._transform(null);
 
-    this._transformPoints(this._path);
-    this._transformPoints(this._rect);
-
     if (this.options.rotation) {
       this._handleLine._transform(null);
-      this._transformPoints(this._handleLine, this._angle, null, this._origin);
+      this._transformPoints(this._path, this._angle, null, this.options.rotationAnchor);
+      this._transformPoints(this._rect, this._angle, null, this.options.rotationAnchor);
+      this._transformPoints(this._handleLine, this._angle, null, this.options.rotationAnchor);
+    } else {
+      this._transformPoints(this._path);
+      this._transformPoints(this._rect);
     }
   },
 
@@ -540,7 +544,7 @@ L.Handler.PathTransform = L.Handler.extend({
     ).addTo(this._handlersGroup);
     var RotateHandleClass = this.options.rotateHandleClass;
     this._rotationMarker = new RotateHandleClass(
-      handlerPosition,
+      this.options.rotateHandleOptions.handlerOrigin || handlerPosition,
       this.options.handlerOptions
     )
       .addTo(this._handlersGroup)
@@ -558,6 +562,15 @@ L.Handler.PathTransform = L.Handler.extend({
    * @return {L.LatLng}
    */
   _getRotationOrigin: function () {
+    if (this.options.rotationAnchor) {
+      var anchor = this.options.rotationAnchor;
+      if (anchor.constructor === Array && anchor.length >= 2) {
+        return new L.LatLng(anchor[0], anchor[1]);
+      } else if (anchor instanceof L.LatLng) {
+        return anchor;
+      }
+    }
+
     var latlngs = this._rect._latlngs[0];
     var lb = latlngs[0];
     var rt = latlngs[2];
@@ -622,7 +635,7 @@ L.Handler.PathTransform = L.Handler.extend({
 
     var angle = this._angle;
     this._apply();
-    this._path.fire('rotateend', { layer: this._path, rotation: angle });
+    this._path.fire('rotateend', { layer: this._path, rotation: angle, options: evt });
   },
 
   /**
