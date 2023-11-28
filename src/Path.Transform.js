@@ -34,7 +34,6 @@ L.PathTransform.Handle.CursorsByType = [
 L.PathTransform.RotateHandle = L.PathTransform.Handle.extend({
   options: {
     className: 'leaflet-path-transform-handler transform-handler--rotate',
-    pane:'transformCirclePane'
   },
 
   onAdd: function (map) {
